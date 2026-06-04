@@ -19,7 +19,7 @@ export const initDB = async () => {
         )
         `);
 
-        await pool.query(`
+     await pool.query(`
       CREATE TABLE IF NOT EXISTS issues(
       id SERIAL PRIMARY KEY,
       title VARCHAR(150) NOT NULL CHECK(char_length(title)<=150),
