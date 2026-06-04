@@ -7,6 +7,7 @@ import express, {
     type Response,
 } from "express";
 import { userRoute } from "./modules/user/user.route";
+import { authRoute } from "./modules/auth/auth.route";
 const app: Application = express()
 app.use(CookieParser());
 app.use(express.json());

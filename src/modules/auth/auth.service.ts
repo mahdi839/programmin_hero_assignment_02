@@ -35,7 +35,17 @@ const loginUserIntoDB = async (payload: { email: string, password: string }) => 
     const accessToken = jwt.sign(jwtPayload, config.secret as string, {
         expiresIn: "1d",
     });
-    return { accessToken };
+    return {
+        tokan:accessToken,
+        user:{
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            created_at:user.created_at,
+            updated_at:user.updated_at,
+            } 
+         };
 }
 
 export const authService = {
