@@ -4,9 +4,6 @@ import config from "./config";
 import { initDB } from "./db";
 const port = config.port
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
 
 const main = ()=>{
    initDB()
