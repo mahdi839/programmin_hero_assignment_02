@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { issueController } from "./issue.controller";
-import { authenticate, authorizeRoles } from "../../middlewares/auth.middleware";
+import { authenticate } from "../../middleware/auth";
+
  
 const router = Router();
 router.get("/", issueController.getAllIssues);
