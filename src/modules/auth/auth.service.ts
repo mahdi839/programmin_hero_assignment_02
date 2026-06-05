@@ -36,7 +36,7 @@ const loginUserIntoDB = async (payload: { email: string, password: string }) => 
         expiresIn: "1d",
     });
     return {
-        tokan:accessToken,
+        token:accessToken,
         user:{
             id: user.id,
             name: user.name,
