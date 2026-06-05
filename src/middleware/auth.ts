@@ -19,9 +19,9 @@ declare global {
 }
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
-  const token = req.headers["authorization"];
+  const authorization = req.headers["authorization"];
 
-  if (!token) {
+  if (!authorization) {
     res.status(401).json({
       success: false,
       message: "Unauthorized: No token provided",
@@ -31,6 +31,10 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
   }
 
   try {
+    const token = authorization.startsWith("Bearer ")
+      ? authorization.slice("Bearer ".length)
+      : authorization;
+
     const decoded = jwt.verify(token, config.secret as string) as JwtPayload;
     req.user = decoded;
     next();

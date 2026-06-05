@@ -4,8 +4,45 @@ import type { IssueStatus, IssueType, SortOrder } from "./issue.interface";
  
 const createIssue = async (req: Request, res: Response) => {
   try {
+    const { title, description, type } = req.body;
+    const validTypes: IssueType[] = ["bug", "feature_request"];
+
+    if (
+      typeof title !== "string" ||
+      title.trim().length === 0 ||
+      title.length > 150
+    ) {
+      res.status(400).json({
+        success: false,
+        message: "Title is required and must be 150 characters or less",
+        errors: null,
+      });
+      return;
+    }
+
+    if (typeof description !== "string" || description.length < 20) {
+      res.status(400).json({
+        success: false,
+        message: "Description is required and must be at least 20 characters",
+        errors: null,
+      });
+      return;
+    }
+
+    if (!validTypes.includes(type)) {
+      res.status(400).json({
+        success: false,
+        message: "Type must be either bug or feature_request",
+        errors: null,
+      });
+      return;
+    }
+
     const reporterId = req.user!.id;
-    const result = await issueService.createIssue(req.body, reporterId);
+    const result = await issueService.createIssue(
+      { title: title.trim(), description, type },
+      reporterId
+    );
     res.status(201).json({
       success: true,
       message: "Issue created successfully",
@@ -44,7 +81,21 @@ const getAllIssues = async (req: Request, res: Response) => {
       return;
     }
  
-    const result = await issueService.getAllIssues({ sort, type, status });
+    const filters: {
+      sort: SortOrder;
+      type?: IssueType;
+      status?: IssueStatus;
+    } = { sort };
+
+    if (type) {
+      filters.type = type;
+    }
+
+    if (status) {
+      filters.status = status;
+    }
+
+    const result = await issueService.getAllIssues(filters);
     res.status(200).json({
       success: true,
       message: "Issues retrived successfully",

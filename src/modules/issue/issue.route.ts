@@ -7,3 +7,4 @@ const router = Router();
 router.get("/", issueController.getAllIssues);
 
 router.post("/", authenticate, issueController.createIssue);
+export const issueRoute = router;
