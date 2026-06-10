@@ -106,14 +106,53 @@ export const getIssueById = async (id: number) => {
   const [issueWithReporter] = await attachReporters(result.rows);
   return issueWithReporter;
 };
+
+export const updateIssue = async (
+  id: number,
+  fields: Partial<Pick<IIssue, "title" | "description" | "type">>
+): Promise<IIssue | null> => {
+  // Dynamically build SET clause for only provided fields
+  const setClauses: string[] = [];
+  const values: unknown[] = [];
+  let paramIndex = 1;
+
+  if (fields.title !== undefined) {
+    setClauses.push(`title = $${paramIndex++}`);
+    values.push(fields.title);
+  }
+  if (fields.description !== undefined) {
+    setClauses.push(`description = $${paramIndex++}`);
+    values.push(fields.description);
+  }
+  if (fields.type !== undefined) {
+    setClauses.push(`type = $${paramIndex++}`);
+    values.push(fields.type);
+  }
+
+  // Always update the updated_at timestamp
+  setClauses.push(`updated_at = NOW()`);
+  values.push(id);
+
+  const result = await pool.query(
+    `UPDATE issues SET ${setClauses.join(", ")} WHERE id = $${paramIndex} RETURNING *`,
+    values
+  );
+
+  return result.rows[0] || null;
+};
+
+export const deleteIssue = async (id: number): Promise<boolean> => {
+  const result = await pool.query("DELETE FROM issues WHERE id = $1 RETURNING id", [id]);
+  return (result.rowCount ?? 0) > 0;
+};
  
 
 export const issueService = {
   createIssue,
   getAllIssues,
   // getSingleIssue,
-//   updateIssue,
-//   updateIssueStatus,
-//   deleteIssue,
+  updateIssue,
+  // updateIssueStatus,
+  deleteIssue,
   getIssueById,
 };

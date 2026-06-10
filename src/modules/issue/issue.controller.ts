@@ -131,11 +131,82 @@ export const getSingleIssue = async (req: Request, res: Response): Promise<void>
   }
 };
 
+export const updateIssue = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "Invalid issue ID." });
+      return;
+    }
+
+    // Fetch the issue first to check permissions
+    const existing = await issueService.getIssueById(id);
+    if (!existing) {
+      res.status(StatusCodes.NOT_FOUND).json({ success: false, message: "Issue not found." });
+      return;
+    }
+
+    const currentUser = req.user!;
+
+    // Contributors can only update their OWN issues and only when status is 'open'
+    if (currentUser.role === "contributor") {
+      const reporter = existing.reporter as { id: number } | null;
+      if (!reporter || reporter.id !== currentUser.id) {
+        res.status(StatusCodes.FORBIDDEN).json({ success: false, message: "You can only update your own issues." });
+        return;
+      }
+      if (existing.status !== "open") {
+        res.status(StatusCodes.CONFLICT).json({ success: false, message: "You can only update issues with open status." });
+        return;
+      }
+    }
+
+    const { title, description, type } = req.body;
+
+    if (type && !["bug", "feature_request"].includes(type)) {
+      res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "type must be bug or feature_request." });
+      return;
+    }
+    if (title && title.length > 150) {
+      res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "title must be 150 characters or fewer." });
+      return;
+    }
+    if (description && description.length < 20) {
+      res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "description must be at least 20 characters." });
+      return;
+    }
+
+    const updated = await issueService.updateIssue(id, { title, description, type });
+    res.status(StatusCodes.OK).json({ success: true, message: "Issue updated successfully", data: updated });
+  } catch {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: "Something went wrong." });
+  }
+};
+
+export const deleteIssue = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "Invalid issue ID." });
+      return;
+    }
+
+    const deleted = await issueService.deleteIssue(id);
+    if (!deleted) {
+      res.status(StatusCodes.NOT_FOUND).json({ success: false, message: "Issue not found." });
+      return;
+    }
+
+    res.status(StatusCodes.OK).json({ success: true, message: "Issue deleted successfully" });
+  } catch(err:any) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: err.message || "Something went wrong." });
+  }
+};
 export const issueController = {
   createIssue,
   getAllIssues,
   getSingleIssue,
-//   updateIssue,
+  updateIssue,
 //   updateIssueStatus,
-//   deleteIssue,
+  deleteIssue,
 };

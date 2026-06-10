@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import config from "../config";
-
+import { StatusCodes } from "http-status-codes";
 export interface JwtPayload {
   id: number;
   name: string;
@@ -54,6 +54,21 @@ export const authorizeRoles = (...roles: string[]) => {
         success: false,
         message: "Forbidden: Insufficient permissions",
         errors: null,
+      });
+      return;
+    }
+    next();
+  };
+};
+
+
+// Middleware to restrict access by role
+export const authorize = (...roles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        message: "You do not have permission to perform this action.",
       });
       return;
     }

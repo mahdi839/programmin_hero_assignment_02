@@ -1,8 +1,12 @@
 export interface IIssue {
+  id?: number;
   title: string;
   description: string;
   reporter_id: number;
   type: "bug" | "feature_request";
+  status?: IssueStatus;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export interface IIssueUpdate {
