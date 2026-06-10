@@ -54,5 +54,5 @@ PATCH /api/issues/:id
 DELETE /api/issues/:id
 
 ---------- LIVE LINK ON VERCEL --------------
-https://github.com/mahdi839/programmin_hero_assignment_02
+https://assignment-2-rho-drab.vercel.app/
 
