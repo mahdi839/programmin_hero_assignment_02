@@ -1,6 +1,33 @@
 import { pool } from "../../db";
+import type { IUser } from "../user/user.interface";
 import type { IIssue, IIssueUpdate, IssueStatus, IssueType, SortOrder } from "./issue.interface";
 
+
+// Helper to attach reporter info to issues without SQL JOIN
+const attachReporters = async (issues: IIssue[]) => {
+  if (issues.length === 0) return [];
+
+  // Collect unique reporter IDs
+  const reporterIds = [...new Set(issues.map((i) => i.reporter_id))];
+
+  // Fetch all those users in one query using IN (...)
+  const usersResult = await pool.query(
+    `SELECT id, name, role FROM users WHERE id = ANY($1::int[])`,
+    [reporterIds]
+  );
+
+  // Build a quick lookup map: { userId: userObj }
+  const userMap: Record<number, Partial<IUser>> = {};
+  usersResult.rows.forEach((u) => {
+    userMap[u.id] = u;
+  });
+
+  // Attach reporter to each issue, remove raw reporter_id
+  return issues.map(({ reporter_id, ...issue }) => ({
+    ...issue,
+    reporter: userMap[reporter_id] || null,
+  }));
+};
 
 const fetchReporters = async (reporterIds: number[]) => {
   if (reporterIds.length === 0) return {};
@@ -16,13 +43,13 @@ const fetchReporters = async (reporterIds: number[]) => {
   return map;
 };
 
-const createIssue = async (payload: IIssue, reporterId: number) => {
-  const { title, description, type } = payload;
+const createIssue = async (payload: IIssue) => {
+  const { title, description, type,reporter_id } = payload;
   const result = await pool.query(
     `INSERT INTO issues(title, description, type, reporter_id)
      VALUES ($1, $2, $3, $4)
      RETURNING id, title, description, type, status, reporter_id, created_at, updated_at`,
-    [title, description, type, reporterId]
+    [title, description, type, reporter_id]
   );
   return result.rows[0];
 };
@@ -71,14 +98,22 @@ const getAllIssues = async (filters: {
     updated_at: issue.updated_at,
   }));
 };
+
+export const getIssueById = async (id: number) => {
+  const result = await pool.query("SELECT * FROM issues WHERE id = $1", [id]);
+  if (result.rows.length === 0) return null;
+
+  const [issueWithReporter] = await attachReporters(result.rows);
+  return issueWithReporter;
+};
  
 
 export const issueService = {
   createIssue,
   getAllIssues,
-//   getSingleIssue,
+  // getSingleIssue,
 //   updateIssue,
 //   updateIssueStatus,
 //   deleteIssue,
-//   getIssueById,
+  getIssueById,
 };

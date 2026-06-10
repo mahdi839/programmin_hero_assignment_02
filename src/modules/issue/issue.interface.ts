@@ -1,6 +1,7 @@
 export interface IIssue {
   title: string;
   description: string;
+  reporter_id: number;
   type: "bug" | "feature_request";
 }
 

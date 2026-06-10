@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { issueService } from "./issue.service";
+import { StatusCodes } from "http-status-codes";
 import type { IssueStatus, IssueType, SortOrder } from "./issue.interface";
  
 const createIssue = async (req: Request, res: Response) => {
@@ -38,10 +39,10 @@ const createIssue = async (req: Request, res: Response) => {
       return;
     }
 
-    const reporterId = req.user!.id;
+    const reporter_id = req.user!.id;
+    const issueType = type as IssueType;
     const result = await issueService.createIssue(
-      { title: title.trim(), description, type },
-      reporterId
+      { title: title.trim(), description, type: issueType,reporter_id},
     );
     res.status(201).json({
       success: true,
@@ -110,10 +111,30 @@ const getAllIssues = async (req: Request, res: Response) => {
   }
 };
 
+export const getSingleIssue = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: "Invalid issue ID." });
+      return;
+    }
+
+    const issue = await issueService.getIssueById(id);
+    if (!issue) {
+      res.status(StatusCodes.NOT_FOUND).json({ success: false, message: "Issue not found." });
+      return;
+    }
+
+    res.status(StatusCodes.OK).json({ success: true, message: "Issue retrived successfully", data: issue });
+  } catch {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: "Something went wrong." });
+  }
+};
+
 export const issueController = {
   createIssue,
   getAllIssues,
-//   getSingleIssue,
+  getSingleIssue,
 //   updateIssue,
 //   updateIssueStatus,
 //   deleteIssue,
